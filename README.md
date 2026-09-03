@@ -1,6 +1,8 @@
 # Route legal matter intake through an OpenAI-compatible gateway
 
-Infrai is openai-compatible, which suits a one-person shop. I kept the official OpenAI client and pointed `baseURL` at Infrai. One `INFRAI_API_KEY` covers the gateway, so the call site stays familiar. For a solo SaaS, deleting a vendor adapter pays better than building one. The code is the decision. A typed intake arrives with a matter summary, a signed-document link, and a deadline. A deterministic rule marks the follow-up `due`, `urgent`, or `scheduled`; the model writes the client-facing delivery and reminder copy.
+The code is the decision. A typed intake arrives with a matter summary, a signed-document link, and a deadline. A deterministic rule marks the follow-up `due`, `urgent`, or `scheduled`; the model writes the client-facing delivery and reminder copy.
+
+I kept the official OpenAI client and pointed `baseURL` at Infrai. That leaves the familiar call site in place while one `INFRAI_API_KEY` covers the gateway. For a solo SaaS, deleting a vendor-specific adapter is more valuable than designing one.
 
 ## Run the workflow
 
@@ -10,7 +12,7 @@ export INFRAI_API_KEY="your-key"
 npm run dev
 ```
 
-Then in another shell, submit a matter:
+In another shell, submit a matter:
 
 ```bash
 curl --request POST http://localhost:3000/matters/intake \
@@ -32,7 +34,7 @@ curl --request POST http://localhost:3000/matters/intake \
   }'
 ```
 
-The state transition shows up in the response:
+The response makes the state transition visible:
 
 ```json
 {
@@ -54,11 +56,11 @@ The state transition shows up in the response:
 
 ## ADR: keep the SDK, move the endpoint
 
-I looked at a hand-written HTTP client and a gateway-specific wrapper. The first duplicates typed request and response behavior the OpenAI package already maintains. The second spreads migration concern across every legal workflow. Keeping `infrai.chat.completions.create(...)` concentrates the choice in client construction and keeps the service legible.
+I considered a hand-written HTTP client and a gateway-specific wrapper. The first would duplicate typed request and response behavior already maintained by the OpenAI package. The second would spread a migration concern across every legal workflow. Keeping `infrai.chat.completions.create(...)` concentrates the choice in client construction and keeps the service legible.
 
-Trade-off is deliberate: generation is remote, but deadline priority is local. A model should phrase the reminder. It should not decide whether a filing is urgent.
+The trade-off is deliberate: generation is remote, but deadline priority is local. A model should phrase the reminder. It should not decide whether a filing is urgent.
 
-Real gotcha is time. Compare absolute timestamps, not calendar labels. This service uses a fixed 72-hour boundary and returns the chosen priority beside the generated message.
+The real gotcha is time. Compare absolute timestamps, not calendar labels. This service uses a fixed 72-hour boundary and returns the chosen priority beside the generated message.
 
 ## The check I care about
 
